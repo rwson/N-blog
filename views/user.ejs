@@ -1,0 +1,32 @@
+<%- include header %>
+	<%if (posts.length > 0) {%>
+		<p></p>
+		<% posts.forEach(function(post,index){ %>
+			<div class="post-contents">
+				<h2>
+					<a href="/u/<%= post.name %>/<%= post.time.day %>/<%= post.title %>"><%= post.title %></a>
+					<a href="/u/<%= post.name %>"><img src="<%= post.head %>" alt="头像"></a>
+				</h2>
+				<p>
+					作者:<a href="/u/<%= post.name %>"><%= post.name %></a>| 
+					日期:<%= post.time.minutes %>
+				</p>
+				<% if(post.tags && post.tags.length > 0){ %>
+					<h5>标签</h5>	
+					<p>
+						<% post.tags.forEach(function(tag,index){ %>
+							<% if(tag){ %>
+								<a class="tag" href="/tags/<%= tag %>"><%= tag %></a>
+							<% } %>
+						<% }) %>
+					</p>
+				<% } %>	
+				<p><%- post.post %></p>
+				<p class="info">阅读:<%= post.pv %> | 评论:<%= post.comments.length %></p>
+			</div>
+		<% }) %>
+		<% } else { %>
+			<p>这个家伙很懒,还没发表过呢!</p>
+		<% } %>
+<%- include paging%>
+<%- include footer%>

@@ -1,0 +1,16 @@
+<%- include header %>
+	<% if(posts.length > 0){ %>
+	<ul class="archive">
+		<% var lastYear = 0 %>
+		<% posts.forEach(function(post,index){ %>
+			<% if(lastYear != post.time.year){ %>
+				<li><h3><%= post.time.year %></h3></li>
+				<li><time><%= post.time.day %></time></li>
+				<li><a href="/u/<%= post.name %>/<%= post.time.day %>/<%= post.title %>"><%= post.title %></a></li>
+			<% } %>
+		<% }) %>
+	</ul>
+	<% } else { %>
+		<h4>啊哦,没有找到关于<b class="search-keyword"><%= keyword %></b>的文章</h4>
+	<% } %>
+<%- include footer%>

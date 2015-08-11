@@ -1,0 +1,66 @@
+<%- include header %>
+
+	<% if(user && (user.name == post.name)) {%>
+	<!--是本人账号-->
+	<p>
+		<a href="/edit/<%= post.name %>/<%= post.time.day %>/<%= post.title %>">编辑</a>
+		 | 
+		<a href="/remove/<%= post.name %>/<%= post.time.day %>/<%= post.title %>">删除</a>
+	</p>
+	<% } else { %>
+	<!--不是本人账号-->
+	<% } %>
+
+	<% var flag = 1 %>
+	<% if(user && (user.name != post.name)){ %>
+		<% if(post.reprint_info != undefined && post.reprint_info.reprint_to != undefined &&  post.reprint_info.reprint_from && user.name == post.reprint_info.reprint_from.name){ %>
+			<% flag = 0 %>
+		<% } %>	
+		<% if(post.reprint_info != undefined && post.reprint_info.reprint_to !=  undefined){ %>
+			<% post.reprint_info.reprint_to.forEach(function(reprint_to,index){ %>
+				<% if(user.name == reprint_to.name){ %>
+					<% flag = 0 %>
+				<% } %>
+			<% }) %>	
+		<% } %>
+	<% } else{ %>
+		<% flag = 0 %>
+	<% } %>
+	<% if(flag == 1){ %>
+		<span><a class="edit" href="/reprint/<%= post.name %>/<%= post.time.day %>/<%= post.title %>">转载</a></span>
+	<% } %>
+	<!-- 设置一个flag标识,如果是游客/该文章的当前作者/该文章的上一级作者/已经转载过该文章的其中一种,都不满足转载的条件,也就不显示转载链接,最后只有当flag为1,才显示转载链接 -->
+
+	<div class="post-contents">
+		<h2><a href="/u/<%= post.name %>/<%= post.time.day %>/<%= post.title %>"><%= post.title %></a></h2>
+		<p>
+			作者:<a href="/u/<%= post.name %>"><%= post.name %></a>| 
+			日期:<%= post.time.minutes %>
+		</p>
+		<% if(post.tags && post.tags.length > 0){ %>
+			<h5>标签</h5>	
+			<p>
+				<% post.tags.forEach(function(tag,index){ %>
+					<% if(tag){ %>
+						<a class="tag" href="/tags/<%= tag %>"><%= tag %></a>
+					<% } %>
+				<% }) %>
+			</p>
+		<% } %>	
+		<p><%- post.post %></p>
+		<p class="info">
+			阅读:<%= post.pv %> | 
+			评论:<%= post.comments.length %> | 
+			转载:
+			<% if(post.reprint_info.reprint_to){ %>
+				<%= post.reprint_info.reprint_to.length %>
+			<% } else { %>
+				<%= 0 %>
+			<% } %>
+		</p>
+		<% if(post.reprint_info.reprint_from != undefined){ %>
+			<a href="/u/<%= post.reprint_info.reprint_from.name %>/<%= post.reprint_info.reprint_from.day %>/<%= post.reprint_info.reprint_from.title %>">原文链接</a>
+		<% } %>
+	</div>
+<%- include comment%>
+<%- include footer%>
