@@ -4,7 +4,20 @@
 
 var mongodb = require('./db'),
     crypto = require('crypto'),
-    avatarDir = require('../settings.js').avatarDir;
+    avatarDir = require('../settings.js').avatarDir,
+    mongoose = require('mongoose');
+
+mongoose.connect('mongodb://localhost:27017/blog');
+
+var userSchema = new mongoose.Schema({
+        'name':'String',
+        'password':'String',
+        'email':'String',
+        'head':'String'
+    },{
+        'collection':'users'
+    }),
+    userModel = mongoose.model('User',userSchema);
 
 /**
  * user类
@@ -30,35 +43,17 @@ User.prototype.save = function (callback) {
             'password': this.password,
             'email': this.email,
             'head':head
-        };
-
-    //	打开数据库
-    mongodb.open(function (err, db) {
-        if (err) {
+        },
+        newUser = new userModel(user);
+    newUser.save(function(err,user){
+        if(err){
+            console.log("出错了");
+            console.log(err);
             return callback(err);
-            //	如果连接失败,返回失败
         }
-
-        db.collection('users', function (err, collection) {
-            if (err) {
-                mongodb.close();
-                return callback(err);
-                //	错误就返回错误信息
-            }
-
-            collection.insert(user, {
-                safe: true
-            }, function (err, user) {
-                mongodb.close();
-                if (err) {
-                    return callback(err);
-                }
-                callback(null, user["ops"]);
-            });
-
-        });
-
-    });
+        console.log("注册成功");
+        callback(null,user);
+    });    
 };
 
 /**
@@ -68,46 +63,11 @@ User.prototype.save = function (callback) {
  * @return {[type]}            [description]
  */
 User.get = function (name, callback) {
-
-    mongodb.open(function (err, db) {
-    //  打开数据库
-    
-        if (err) {
+    userModel.findOne({'name':name},function(err,user){
+        if(err){
             return callback(err);
-        }//	错误返回错误信息
-
-        db.collection('users', function (err, collection) {
-        //  读取users表    
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-                //	错误就返回错误信息
-            }
-
-            collection.findOne({
-                name: name
-            }, function (err, user) {
-            //  根据用户名查表    
-
-                mongodb.close();
-                if (err) {
-                    return callback(err);
-                }
-                //  查询失败
-
-                var cUser = user;
-                if(user instanceof Array){
-                    cUser = user[0];
-                }
-                //  如果返回的user是数组类型,就手动改成对象类型
-
-                callback(null, cUser);
-
-            });
-
-        });
-
+        }
+        callback(null,user);
     });
 };
 

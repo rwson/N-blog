@@ -11,10 +11,10 @@
     "mongodb":"*",
     "connect-mongo":"*",
     "connect-flash":"*",
-    "markdowm":"*",
     "formidable":"*",
     "passport":"*",
     "passport-github":"*",
-    "passport-qq":"*"
+    "passport-qq":"*",
+    "mongoose":"*"
   }
 }
