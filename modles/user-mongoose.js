@@ -1,11 +1,23 @@
 /**
- * 用户类操作相关-mongodb和async相关
+ * 用户类操作相关-mongoose相关处理
  */
 
 var mongodb = require('./db'),
     crypto = require('crypto'),
     avatarDir = require('../settings.js').avatarDir,
-    async = require('async');
+    mongoose = require('mongoose');
+
+mongoose.connect('mongodb://localhost:27017/blog');
+
+var userSchema = new mongoose.Schema({
+        'name':'String',
+        'password':'String',
+        'email':'String',
+        'head':'String'
+    },{
+        'collection':'users'
+    }),
+    userModel = mongoose.model('User',userSchema);
 
 /**
  * user类
@@ -31,31 +43,17 @@ User.prototype.save = function (callback) {
             'password': this.password,
             'email': this.email,
             'head':head
-        };
-
-    async.waterfall([
-        function(cb){
-            mongodb.open(function(err,db){
-                cb(err,db);
-            });
         },
-        function(db,cb){
-            db.collection('users',function(err,collection){
-                cb(err,collection);
-            });
-        },
-        function(collection,cb){
-            collection.insert(user,{
-                'safe':true
-            },function(err,user){
-                cb(err,user);
-            });
+        newUser = new userModel(user);
+    newUser.save(function(err,user){
+        if(err){
+            console.log("出错了");
+            console.log(err);
+            return callback(err);
         }
-    ],
-    function(err,user){
-        mongodb.close();
-        callback(err,user[0]);
-    });
+        console.log("注册成功");
+        callback(null,user);
+    });    
 };
 
 /**
@@ -65,29 +63,11 @@ User.prototype.save = function (callback) {
  * @return {[type]}            [description]
  */
 User.get = function (name, callback) {
-
-    async.waterfall([
-        function(cb){
-            mongodb.open(function(err,db){
-                cb(err,db);
-            });
-        },
-        function(db,cb){
-            db.collection('users',function(err,collection){
-                cb(err,collection);
-            });
-        },
-        function(collection,cb){
-            collection.findOne({
-                'name':name
-            },function(err,user){
-                cb(err,user);
-            });
+    userModel.findOne({'name':name},function(err,user){
+        if(err){
+            return callback(err);
         }
-    ],
-    function(err,user){
-        mongodb.close();
-        callback(err,user[0]);
+        callback(null,user);
     });
 };
 
@@ -105,6 +85,9 @@ User.update = function(name,callback){
             return callback(err);
         }
         //  打开失败
+
+        
+
     });
 };
 

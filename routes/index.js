@@ -13,6 +13,8 @@ module.exports = function (app) {
         var page = req.query.p ? parseInt(req.query.p) : 1;
         //  判断是否为第一个,并且把请求的页码转换成数字类型
 
+        console.log(req.session.user);
+
         Post.getTen(null, page, function (err, posts, total) {
             //  从数据库中获取当前页对应的10条数据
             
@@ -70,7 +72,6 @@ module.exports = function (app) {
         });
 
         User.get(newUser.name, function (err, user) {
-
             if (user) {
                 req.flash('error', '用户已经存在!');
                 return res.redirect('/reg');
