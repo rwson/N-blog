@@ -54,7 +54,7 @@ User.prototype.save = function (callback) {
     ],
     function(err,user){
         mongodb.close();
-        callback(err,user[0]);
+        callback(err,user);
     });
 };
 

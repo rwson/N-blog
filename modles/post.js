@@ -3,8 +3,7 @@
  */
 
 var mongodb = require('./db'),
-    markdown = require('markdown').markdown;
-//	引入markdown模块
+    async = require('async');
 
 /**
  * Post类
@@ -57,40 +56,26 @@ Post.prototype.save = function (callback) {
         };
     //	要存储的文档格式
 
-    mongodb.open(function (err, db) {
-        //	打开数据库
-
-        if (err) {
-            return callback(err);
-        }
-        //	打开失败
-
-        db.collection('posts', function (err, collection) {
-            //	读取posts集合
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-            }
-
+    async.waterfall([
+        function(cb){
+            mongodb.open(function(err,db){
+                cb(err,db);   
+            });
+        },
+        function(db,cb){
+            db.collection('posts',function(err,collection){
+                cb(err,collection);
+            });
+        },
+        function(collection,cb){
             collection.insert(post, {
                 'safe': true
             }, function (err) {
-                //	插入数据
-
-                mongodb.close();
-
-                if (err) {
-                    return callback(err);
-                }
-                //	插入失败,返回err
-
-                callback(null);
-
+                cb(err);
             });
-
-        });
-
+        }
+    ],function(err){
+        callback(err);
     });
 };
 
@@ -103,50 +88,30 @@ Post.prototype.save = function (callback) {
  */
 Post.getAll = function (name, callback) {
 
-    mongodb.open(function (err, db) {
-
-        //	打开数据库
-        if (err) {
-            return callback(err);
-        }
-
-        db.collection('posts', function (err, collection) {
-            //	读取posts集合
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-            }
-
+    async.waterfall([
+        function(cb){
+            mongodb.open(function(err,db){
+                cb(err,db);
+            });
+        },
+        function(db,cb){
+            db.collection('posts',function(err,collection){
+                cb(err,collection);
+            });
+        },
+        function(collection,cb){
             var query = {};
-
-            if (name) {
+            if(name){
                 query.name = name;
             }
-
             collection.find(query).sort({
                 'time': -1
             }).toArray(function (err, docs) {
-                //	根据query查询文章
-
-                mongodb.close();
-                if (err) {
-                    return callback(err);
-                }
-                //	读取失败,返回err
-
-                docs.forEach(function (doc, index) {
-                    doc.post = markdown.toHTML(doc.post);
-                });
-                //	添加markdown模块
-
-                callback(null, docs);
-                //	读取成功,用数组形式返回查询结果
-
+                cb(err,docs);
             });
-
-        });
-
+        }
+    ],function(err,docs){
+        callback(err,docs);
     });
 };
 
@@ -158,57 +123,37 @@ Post.getAll = function (name, callback) {
  * @return {[type]}            [description]
  */
 Post.getTen = function (name, page, callback) {
-    mongodb.open(function (err, db) {
-        //  打开数据库
 
-        if (err) {
-            return callback(err);
-        }
-        //  打开失败
-
-        db.collection('posts', function (err, collection) {
-            //  查询posts表
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-            }
-            //  查询失败
-
+    async.waterfall([
+        function(cb){
+            mongodb.open(function(err,db){
+                cb(db);
+            });
+        },
+        function(db,cb){
+            db.collection('posts',function(err,collection){
+                cb(err,collection);
+            });
+        },
+        function(collection,cb){
             var query = {};
-
             if (name) {
                 query.name = name;
             }
-
             collection.count(query, function (err, total) {
-                //  count查询,返回特定的文档数total
-
                 collection.find(query, {
                     'skip': (page - 1) * 10,
                     'limit': 10
                 }).sort({
                     'time': -1
                 }).toArray(function (err, docs) {
-                    //  跳过前几页的多少个10条,查询本页的10条,并且按时间降序排序
-
-                    mongodb.close();
-                    if (err) {
-                        return callback(err);
-                    }
-                    //  查询失败
-
-                    docs.forEach(function (doc) {
-                        doc.post = markdown.toHTML(doc.post);
-                    });
-
-                    callback(null, docs, total);
+                    callback(err, docs, total);
                 });
 
             });
-
-        });
-
+        }
+    ],function(err, docs, total){
+        callback(err, docs, total);
     });
 };
 
@@ -266,17 +211,6 @@ Post.getOne = function (name, day, title, callback) {
                         if (err) {
                             return callback(err);
                         }
-                    });
-
-                    doc.post = markdown.toHTML(doc.post);
-                    doc.comments.forEach(function (comment) {
-                        //  循环评论
-
-                        if (comment.content) {
-                            comment.content = markdown.toHTML(comment.content);
-                        }
-                        //  评论内容存在,用markdown转成HTML格式
-
                     });
                 }
                 //	解析markdown为html
