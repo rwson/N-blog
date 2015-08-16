@@ -400,6 +400,7 @@ module.exports = function (app) {
             emailMd5 = md5.update(req.body.email.toLowerCase()).digest('hex'),
             head = 'http://zh-tw.gravatar.com/avatar' + emailMd5 + '?s=48',
             comment = {
+                'id':emailMd5 + ('' + Math.random()).replace(/\./,''),
                 'name': req.body.name,
                 'head':head,
                 'email': req.body.email,
@@ -419,13 +420,28 @@ module.exports = function (app) {
             }
             //  评论失败
 
-            req.flash('success', '留言成功!');
+            req.flash('success', '评论成功!');
             res.redirect('back');
             //  评论成功
 
         });
     });
     //  评论请求
+
+    app.get('/delete-comment/:name/:day/:title/:id',function(req,res){
+        Comment.delete(req.params.name,req.params.day,req.params.title,req.params.id,function(err){
+            console.log('------------------');
+            console.log(err);
+            console.log('------------------');
+            if(err){
+                req.flash('error','删除失败!');
+                return res.redirect('back');    
+            }
+            req.flash('success','删除成功!');
+            res.redirect('back');
+        });
+    });
+    //  删除评论请求
 
     app.get('/edit/:name/:day/:title', _checkLogin);
     app.get('/edit/:name/:day/:title', function (req, res) {
@@ -575,7 +591,7 @@ module.exports = function (app) {
     });
     //  404页
 
-}
+};
 
 /**
  * 读取某个目录下的文件,并以数组的形式返回

@@ -1,6 +1,7 @@
 <%- include header %>
 
-	<% if(user && (user.name == post.name)) {%>
+	<% var isAuthor = user && (user.name == post.name) %>
+	<% if(isAuthor) {%>
 	<!--是本人账号-->
 	<p>
 		<a href="/edit/<%= post.name %>/<%= post.time.day %>/<%= post.title %>">编辑</a>

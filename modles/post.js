@@ -364,12 +364,12 @@ Post.getArchive = function (callback) {
     async.waterfall([
         function(cb){
             mongodb.open(function(err,db){
-                cb(db);
+                cb(err,db);
             });
         },
         function(db,cb){
             db.collection('posts',function(err,collection){
-                cb(collection);
+                cb(err,collection);
             });
         },
         function(collection,cb){

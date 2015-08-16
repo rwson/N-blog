@@ -10,6 +10,10 @@
 		<p>
 			评论内容:
 			<%- comment.content %>
+			<% if(isAuthor){ %>
+			<!--当前登录用户为文章的作者,显示删除评论按钮-->
+				<a href="/delete-comment/<%= post.name %>/<%= post.time.day %>/<%= post.title %>/<%= comment.id %>">删除本条评论</a>
+			<% } %>
 		</p>
 	<% }) %>
 <% } else { %>

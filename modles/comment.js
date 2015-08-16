@@ -2,7 +2,8 @@
  * 评论类
  */
 
-var mongodb = require('./db');
+var mongodb = require('./db'),
+	async = require('async');
 
 /**
  * 评论类
@@ -29,20 +30,19 @@ Comment.prototype.save = function(callback){
 		title = this.title,
 		comment = this.comment;
 
-	mongodb.open(function(err,db){
-		if(err){
-			return callback(err);
-		}
-		//	打开失败
-
-		db.collection('posts',function(err,collection){
-			//	读取posts集合
-
-			if(err){
-				mongodb.close();
-				return callback(err);
-			}
-
+	async.waterfall([
+		function(cb){
+			mongodb.open(function(err,db){
+				cb(err,db);
+			});
+		},
+		function(db,cb){
+			db.collection('posts',function(err,collection){
+				console.log(collection);
+				cb(err,collection);
+			});
+		},
+		function(collection,cb){
 			collection.update({
 				'name':name,
 				'title':title,
@@ -52,21 +52,74 @@ Comment.prototype.save = function(callback){
 					'comments':comment
 				}
 			},function(err){
-				//	通过名字、日期、标题来给文章增加一个新评论
-
-				mongodb.close();
-				if(err){
-					return callback(err);
-				}
-				//	插入失败
-
-				callback(null);
-
+				cb(err);
 			});
+		}
+	],function(err){
+		mongodb.close();
+		callback(err);
+	});
+};
 
-		});
-
-	});		
+/**
+ * 如果当前用户是文章作者,可以删除评论
+ * @param  {[type]}   name     [description]
+ * @param  {[type]}   day      [description]
+ * @param  {[type]}   title    [description]
+ * @param  {[type]}   id       [description]
+ * @param  {Function} callback [description]
+ * @return {[type]}            [description]
+ */
+Comment.delete = function(name,day,title,id,callback){
+	async.waterfall([
+		function(cb){
+			mongodb.open(function(err,db){
+				cb(err,db);
+			});
+		},
+		function(db,cb){
+			db.collection('posts',function(err,collection){
+				cb(err,collection);
+			});
+		},
+		function(collection,cb){
+			collection.findOne({
+                'name': name,
+                'title': title,
+                'time.day': day
+            }, function (err, doc) {
+                cb(err, doc, collection);
+            });
+		},
+		function(doc,collection,cb){
+			if(doc){
+				var comment = doc.comments,
+					tmpArr = [];
+				comment.forEach(function(item, index){
+					if(item.id == id){
+						console.log("呵呵呵呵");
+					}else{
+						tmpArr.push(item);
+					}
+				});
+				collection.update({
+	                'title':title,
+	                'time.day':day,
+	                'name':name
+	            },{
+	                '$set':{
+	                    'comments':tmpArr
+	                }
+	            },
+	            function(err){
+	                cb(err);
+	            });
+			}
+		}
+	],function(err){
+		mongodb.close();
+		callback(err);
+	});
 };
 
 module.exports = Comment;
