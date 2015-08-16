@@ -1,5 +1,6 @@
 <%- include header %>
 	<% if(posts.length > 0){ %>
+	<h4>找到关于<b class="search-keyword"><%= keyword %></b>的文章共<%= posts.length %>篇</h4>
 	<ul class="archive">
 		<% var lastYear = 0 %>
 		<% posts.forEach(function(post,index){ %>

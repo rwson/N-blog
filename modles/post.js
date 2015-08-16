@@ -57,24 +57,25 @@ Post.prototype.save = function (callback) {
     //	要存储的文档格式
 
     async.waterfall([
-        function(cb){
-            mongodb.open(function(err,db){
-                cb(err,db);   
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db);
             });
         },
-        function(db,cb){
-            db.collection('posts',function(err,collection){
-                cb(err,collection);
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
             });
         },
-        function(collection,cb){
+        function (collection, cb) {
             collection.insert(post, {
                 'safe': true
             }, function (err) {
                 cb(err);
             });
         }
-    ],function(err){
+    ], function (err) {
+        mongodb.close();
         callback(err);
     });
 };
@@ -87,31 +88,31 @@ Post.prototype.save = function (callback) {
  * @return {[type]}            [description]
  */
 Post.getAll = function (name, callback) {
-
     async.waterfall([
-        function(cb){
-            mongodb.open(function(err,db){
-                cb(err,db);
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err, db);
             });
         },
-        function(db,cb){
-            db.collection('posts',function(err,collection){
-                cb(err,collection);
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
             });
         },
-        function(collection,cb){
+        function (collection, cb) {
             var query = {};
-            if(name){
+            if (name) {
                 query.name = name;
             }
             collection.find(query).sort({
                 'time': -1
             }).toArray(function (err, docs) {
-                cb(err,docs);
+                cb(err, docs);
             });
         }
-    ],function(err,docs){
-        callback(err,docs);
+    ], function (err, docs) {
+        mongodb.close();
+        callback(err, docs);
     });
 };
 
@@ -123,19 +124,18 @@ Post.getAll = function (name, callback) {
  * @return {[type]}            [description]
  */
 Post.getTen = function (name, page, callback) {
-
     async.waterfall([
-        function(cb){
-            mongodb.open(function(err,db){
-                cb(db);
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err,db);
             });
         },
-        function(db,cb){
-            db.collection('posts',function(err,collection){
-                cb(err,collection);
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
             });
         },
-        function(collection,cb){
+        function (collection, cb) {
             var query = {};
             if (name) {
                 query.name = name;
@@ -149,10 +149,10 @@ Post.getTen = function (name, page, callback) {
                 }).toArray(function (err, docs) {
                     callback(err, docs, total);
                 });
-
             });
         }
-    ],function(err, docs, total){
+    ], function (err, docs, total) {
+        mongodb.close();
         callback(err, docs, total);
     });
 };
@@ -166,60 +166,42 @@ Post.getTen = function (name, page, callback) {
  * @return {[type]}            [description]
  */
 Post.getOne = function (name, day, title, callback) {
-    mongodb.open(function (err, db) {
-        //	打开数据库
-
-        if (err) {
-            return callback(err);
-        }
-        //	数据库打开失败
-
-        db.collection('posts', function (err, collection) {
-            //	读取posts集合
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-            }
-            //	读取失败
-
+    async.waterfall([
+        function (cb) {
+            mongodb.open(function (err, db) {
+                cb(err,db);
+            });
+        },
+        function (db, cb) {
+            db.collection('posts', function (err, collection) {
+                cb(err, collection);
+            });
+        },
+        function (collection, cb) {
             collection.findOne({
                 'name': name,
                 'title': title,
                 'time.day': day
             }, function (err, doc) {
-                //	根据用户名、发表日期及文章名进行
-
-                if (err) {
-                    return callback(err);
-                }
-                //	读取失败
-
-                if (doc) {
-                    collection.update({
-                        'name': name,
-                        'title': title,
-                        'time.day': day
-                    }, {
-                        '$inc': {
-                            'pv': 1
-                        }
-                    }, function (err) {
-                        //  每次取得该文章(每次访问)访问量加1
-
-                        mongodb.close();
-                        if (err) {
-                            return callback(err);
-                        }
-                    });
-                }
-                //	解析markdown为html
-
-                callback(null, doc);
-                //	返回查到的文章
-
+                cb(err, doc, collection);
             });
-        });
+        },
+        function (doc,collection,cb) {
+            collection.update({
+                'name': name,
+                'title': title,
+                'time.day': day
+            }, {
+                '$inc': {
+                    'pv': 1
+                }
+            }, function (err) {
+                cb(err,doc);
+            });
+        }
+    ], function (err, doc) {
+        mongodb.close();
+        callback(err, doc);
     });
 };
 
@@ -232,41 +214,29 @@ Post.getOne = function (name, day, title, callback) {
  * @return {[type]}            [description]
  */
 Post.edit = function (name, day, title, callback) {
-    mongodb.open(function (err, db) {
-        //	打开数据库
-
-        if (err) {
-            return callback(err);
-        }
-        //	打开失败
-
-        db.collection('posts', function (err, collection) {
-            //	读取posts表
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-            }
-            //	读取失败
-
-            collection.findOne({
-                'name': name,
-                'time.day': day,
-                'title': title
-            }, function (err, doc) {
-
-                mongodb.close();
-                if (err) {
-                    return callback(err);
-                }
-                //	读取失败
-
-                callback(null, doc);
-                //	把查询到数据返回给回调函数
+    async.waterfall([
+        function(cb){
+            mongodb.open(function(err,db){
+                cb(err,db);
             });
-
-        });
-
+        },
+        function(db,cb){
+            db.collection('posts',function(err,collection){
+                cb(err,collection);
+            });
+        },
+        function(collection,cb){
+            collection.findOne({
+                'name':name,
+                'time.day':day,
+                'title':title
+            },function(err,doc){
+                cb(err,doc);
+            });
+        }
+    ],function(err,doc){
+        mongodb.close();
+        callback(err,doc);
     });
 };
 
@@ -280,44 +250,34 @@ Post.edit = function (name, day, title, callback) {
  * @return {[type]}            [description]
  */
 Post.update = function (name, day, title, post, callback) {
-    mongodb.open(function (err, db) {
-        //	打开数据库
-
-        if (err) {
-            return callback(err);
-        }
-        //	打开失败,并且返回错误信息
-
-        db.collection('posts', function (err, collection) {
-            //	读取posts表
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-            }
-            //	读取失败
-
-            collection.update({
-                'title': title,
-                'name': name,
-                'time.day': day
-            }, {
-                $set: {
-                    'post': post
-                }
-            }, function (err) {
-                //	更新对应的文章
-
-                if (err) {
-                    return callback(err);
-                }
-                //	更新失败
-
-                callback(null);
+    async.waterfall([
+        function(cb){
+            mongodb.open(function(err,db){
+                cb(err,db);
             });
-
-        });
-
+        },
+        function(db,cb){
+            db.collection('posts',function(err,collection){
+                cb(err,collection);
+            });
+        },
+        function(collection,cb){
+            collection.update({
+                'title':title,
+                'time.day':day,
+                'name':name
+            },{
+                '$set':{
+                    'post':post
+                }
+            },
+            function(err){
+                cb(err);
+            });
+        }
+    ],function(err){
+        mongodb.close();
+        callback(err);
     });
 };
 
@@ -330,90 +290,68 @@ Post.update = function (name, day, title, post, callback) {
  * @return {[type]}            [description]
  */
 Post.remove = function (name, day, title, callback) {
-    mongodb.open(function (err, db) {
-        //	打开数据库
-
-        if (err) {
-            return callback(err);
-        }
-        //	打开失败
-
-        db.collection('posts', function (err, collection) {
-            //	读取posts表
-
-            console.log('卧槽!打开数据库!要删东西了嘛!');
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-            }
-            //	读取失败
-
+    async.waterfall([
+        function(cb){
+            mongodb.open(function(err,db){
+                cb(err,db);
+            });
+        },
+        function(db,cb){
+            db.collection('posts',function(err,collection){
+                cb(err,collection);
+            });
+        },
+        function(collection,cb){
             collection.findOne({
                 'name': name,
                 'time.day': day,
                 'title': title
             }, function (err, doc) {
-                //  找到该文章   
-
-                if (err) {
-                    mongodb.close();
-                    return callback(err);
-                }
-                //  查找失败
-
-                var reprint_from;
-                if (doc.reprint_info.reprint_from) {
-                    reprint_from = doc.reprint_info.reprint_from;
-                }
-                //  如果有reprint_from,即该文章是转载来的
-
-                if (reprint_from) {
-                    collection.update({
-                        'name': reprint_from.name,
-                        'time.day': reprint_from.day,
-                        'title': reprint_from.title
-                    }, {
-                        '$pull': {
-                            'reprint_info.reprint_to': {
-                                'name': name,
-                                'day': day,
-                                'title': title
-                            }
-                        }
-                    }, function (err) {
-                        //  更新原文中的转载信息,$pull用于删除数组中的特定项
-
-                        if (err) {
-                            mongodb.close();
-                            return callback(err);
-                        }
-                        //  更新失败
-
-                    });
-                }
-                collection.remove({
-                    'name': name,
-                    'time.day': day,
-                    'title': title
+                cb(err,doc,collection);
+            });
+        },
+        function(doc,collection,cb){
+            var reprint_from;
+            if (doc.reprint_info.reprint_from) {
+                reprint_from = doc.reprint_info.reprint_from;
+            }
+            if (reprint_from) {
+                collection.update({
+                    'name': reprint_from.name,
+                    'time.day': reprint_from.day,
+                    'title': reprint_from.title
                 }, {
-                    'w': 1
+                    '$pull': {
+                        'reprint_info.reprint_to': {
+                            'name': name,
+                            'day': day,
+                            'title': title
+                        }
+                    }
                 }, function (err) {
-                    //  根据用户名,日期,标题删除一篇文章
-
-                    mongodb.close();
+                    //  更新原文中的转载信息,$pull用于删除数组中的特定项
 
                     if (err) {
+                        mongodb.close();
                         return callback(err);
                     }
-                    //  删除失败
+                    //  更新失败
 
-                    callback(null);
-                    //  删除成功
                 });
-
+            }
+            collection.remove({
+                'name': name,
+                'time.day': day,
+                'title': title
+            }, {
+                'w': 1
+            }, function (err) {
+                cb(err);
             });
-        });
+        }
+    ],function(err){
+        mongodb.close();
+        callback(err);
     });
 };
 
@@ -423,23 +361,18 @@ Post.remove = function (name, day, title, callback) {
  * @return {[type]}            [description]
  */
 Post.getArchive = function (callback) {
-    mongodb.open(function (err, db) {
-        //  打开数据库
-
-        if (err) {
-            return callback(err);
-        }
-        //  打开失败
-
-        db.collection('posts', function (err, collection) {
-            //  读取posts表
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-            }
-            //  读取失败
-
+    async.waterfall([
+        function(cb){
+            mongodb.open(function(err,db){
+                cb(db);
+            });
+        },
+        function(db,cb){
+            db.collection('posts',function(err,collection){
+                cb(collection);
+            });
+        },
+        function(collection,cb){
             collection.find({}, {
                 'name': 1,
                 'time': 1,
@@ -447,19 +380,12 @@ Post.getArchive = function (callback) {
             }).sort({
                 'time': -1
             }).toArray(function (err, docs) {
-                //  返回只包含name、time、title属性的温度组成的数组
-
-                mongodb.close();
-
-                if (err) {
-                    callback(err);
-                }
-
-                callback(null, docs);
-
+                cb(err,docs);
             });
-        });
-
+        }
+    ],function(err,docs){
+        mongodb.close();
+        callback(err,docs);
     });
 };
 
@@ -469,39 +395,25 @@ Post.getArchive = function (callback) {
  * @return {[type]}            [description]
  */
 Post.getTags = function (callback) {
-    mongodb.open(function (err, db) {
-        //  打开数据库
-
-        if (err) {
-            return callback(err);
-        }
-        //  打开失败
-
-        db.collection('posts', function (err, collection) {
-            //  查询posts表
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-            }
-            //  查询失败
-
-            collection.distinct('tags', function (err, docs) {
-                //  distinct用来找出指定建的所有不同值
-
-                mongodb.close();
-
-                if (err) {
-                    return callback(err);
-                }
-                //  获取失败
-
-                callback(null, docs);
-
+    async.waterfall([
+        function(cb){
+            mongodb.open(function(err,db){
+                cb(err,db);
             });
-
-        });
-
+        },
+        function(db,cb){
+            db.collection('posts',function(err,collection){
+                cb(err,collection);
+            });
+        },
+        function(collection,cb){
+            collection.distinct('tags', function (err, docs) {
+                cb(err,docs);
+            });
+        }
+    ],function(err,docs){
+        mongodb.close();
+        callback(err,docs);
     });
 };
 
@@ -512,18 +424,18 @@ Post.getTags = function (callback) {
  * @return {[type]}            [description]
  */
 Post.getTag = function (tag, callback) {
-    mongodb.open(function (err, db) {
-        //  打开数据库
-
-        db.collection('posts', function (err, collection) {
-            //  查询posts表
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-            }
-            //  查询失败
-
+    async.waterfall([
+        function(cb){
+            mongodb.open(function(err,db){
+                cb(err,db);
+            });
+        },
+        function(db,cb){
+            db.collection('posts',function(err,collection){
+                cb(err,collection);
+            });
+        },
+        function(collection,cb){
             collection.find({
                 'tags': tag
             }, {
@@ -531,20 +443,12 @@ Post.getTag = function (tag, callback) {
                 'time': 1,
                 'title': 1
             }).toArray(function (err, docs) {
-                //  查询所有tags里面只包含tag的标签,并且返回由name、time、title组成的对象数组
-
-                mongodb.close();
-
-                if (err) {
-                    return callback(err);
-                }
-                //  查询失败
-
-                callback(null, docs);
+                cb(err,docs);
             });
-
-        });
-
+        }
+    ],function(err,docs){
+        mongodb.close();
+        callback(err,docs);
     });
 };
 
@@ -555,21 +459,20 @@ Post.getTag = function (tag, callback) {
  * @return {[type]}            [description]
  */
 Post.search = function (keyword, callback) {
-    mongodb.open(function (err, db) {
-        //  打开数据库
-
-        db.collection('posts', function (err, collection) {
-            //  查询posts表
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-            }
-            //  查询失败
-
-            var pattern = new RegExp("^.*" + keyword + ".$", "i");
-            //  组装搜索正则
-
+    async.waterfall([
+        function(cb){
+            mongodb.open(function(err,db){
+                cb(err,db);
+            });
+        },
+        function(db,cb){
+            db.collection('posts',function(err,collection){
+                cb(err,collection);
+            });
+        },
+        function(collection,cb){
+            var pattern = new RegExp("^.*" + keyword + ".*$", "i");
+            console.log(pattern);
             collection.find({
                 'title': pattern
             }, {
@@ -579,19 +482,12 @@ Post.search = function (keyword, callback) {
             }).sort({
                 'time': -1
             }).toArray(function (err, docs) {
-                //  根据关键字找出标题中是否含有此字符(串),按时间降序取出相应的数据
-
-                mongodb.close();
-                if (err) {
-                    return callback(err);
-                }
-                //  检索失败
-
-                callback(null, docs);
+                console.log(docs);
+                cb(err,docs);
             });
-
-        });
-
+        }
+    ],function(err,docs){
+        callback(err,docs);
     });
 };
 
@@ -603,100 +499,77 @@ Post.search = function (keyword, callback) {
  * @return {[type]}                [description]
  */
 Post.reprint = function (reprint_from, reprint_to, callback) {
-    mongodb.open(function (err, db) {
-        //  打开数据库
-
-        if (err) {
-            return callback(err);
-        }
-        //  打开失败
-
-        db.collection('posts', function (err, collection) {
-            //  查询posts表
-
-            if (err) {
-                mongodb.close();
-                return callback(err);
-            }
-            //  打开失败
-
+    async.waterfall([
+        function(cb){
+            mongodb.open(function(err,db){
+                cb(err,db);
+            });
+        },
+        function(db,cb){
+            db.collection('posts',function(err,collection){
+                cb(err,collection);
+            });
+        },
+        function(collection,cb){
             collection.findOne({
                 'name': reprint_from.name,
                 'time.day': reprint_from.day,
                 'title': reprint_from.title
             }, function (err, doc) {
-                //  查找原来的文档信息
-
+                cb(err,doc,collection);
+            });
+        },
+        function(doc,collection){
+            var date = new Date(),
+                time = {
+                    'date': date,
+                    'year': date.getFullYear(),
+                    'month': date.getFullYear() + "-" + (date.getMonth() + 1),
+                    'day': date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate(),
+                    'minutes': date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + (date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes())
+                };
+            delete doc._id;
+            doc.name = reprint_to.name;
+            doc.head = reprint_to.head;
+            doc.time = time;
+            doc.title = doc.title.search(/[转载]/g) > -1 ? doc.title : "[转载]" + doc.title;
+            doc.comments = [];
+            doc.reprint_info = {
+                'reprint_from': reprint_from
+            };
+            doc.pv = 0;
+            collection.update({
+                'name': reprint_from.name,
+                'time.day': reprint_from.day,
+                'title': reprint_from.title
+            }, {
+                '$push': {
+                    'reprint_info.reprint_to': {
+                        'name': doc.name,
+                        'day': time.day,
+                        'title': doc.title
+                    }
+                }
+            }, function (err) {
                 if (err) {
                     mongodb.close();
                     return callback(err);
                 }
-                //  查找失败
-
-                var date = new Date(),
-                    time = {
-                        'date': date,
-                        'year': date.getFullYear(),
-                        'month': date.getFullYear() + "-" + (date.getMonth() + 1),
-                        'day': date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate(),
-                        'minutes': date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate() + " " + date.getHours() + ":" + (date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes())
-                    };
-                delete doc._id;
-                //  删除_id,因为_id是唯一的
-
-                doc.name = reprint_to.name;
-                doc.head = reprint_to.head;
-                doc.time = time;
-                doc.title = doc.title.search(/[转载]/ > -1) ? doc.title : "[转载]" + doc.title;
-                doc.comments = [];
-                doc.reprint_info = {
-                    'reprint_from': reprint_from
-                };
-                doc.pv = 0;
-                //  组装副本数据,用做插入数据库
-
-                collection.update({
-                    'name': reprint_from.name,
-                    'time.day': reprint_from.day,
-                    'title': reprint_from.title
-                }, {
-                    '$push': {
-                        'reprint_info.reprint_to': {
-                            'name': doc.name,
-                            'day': time.day,
-                            'title': doc.title
-                        }
-                    }
-                }, function (err) {
-                    //  更新原来文档中reprint_info中的reprint_to属性
-
+                collection.insert(doc, {
+                    'safe': true
+                }, function (err, post) {
+                    mongodb.close();
                     if (err) {
-                        mongodb.close();
                         return callback(err);
                     }
-                    //  更新失败
+                    callback(null, post[0]);
 
-                    collection.insert(doc, {
-                        'safe': true
-                    }, function (err, post) {
-                        //  将生成的副本重新插入数据库,并且返回存储后的文档
-
-                        mongodb.close();
-
-                        if (err) {
-                            return callback(err);
-                        }
-                        //  转载失败
-
-                        callback(null, post[0]);
-
-                    });
                 });
-
             });
-
-        });
-
+        },
+        function(doc){}
+    ],function(){
+        mongodb.close();
     });
 };
 

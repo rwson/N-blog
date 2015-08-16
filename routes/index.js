@@ -13,8 +13,6 @@ module.exports = function (app) {
         var page = req.query.p ? parseInt(req.query.p) : 1;
         //  判断是否为第一个,并且把请求的页码转换成数字类型
 
-        console.log(req.session.user);
-
         Post.getTen(null, page, function (err, posts, total) {
             //  从数据库中获取当前页对应的10条数据
             
@@ -480,7 +478,6 @@ module.exports = function (app) {
             }
             //	保存失败,返回之前的文章页
 
-            console.log("保存成功!");
             req.flash('success', '保存成功!');
             res.redirect(url);
             //	修改成功,返回之前的文章页
@@ -592,7 +589,6 @@ function _rendFileList(fs,dir){
     
         fs.readdir(dir, function(err, files){
         if(err){
-            console.log('error:\n' + err);
             return;
         }
         //err 为错误,files文件名列表包含文件夹与文件
