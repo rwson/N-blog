@@ -38,7 +38,6 @@ Comment.prototype.save = function(callback){
 		},
 		function(db,cb){
 			db.collection('posts',function(err,collection){
-				console.log(collection);
 				cb(err,collection);
 			});
 		},
@@ -97,7 +96,6 @@ Comment.delete = function(name,day,title,id,callback){
 					tmpArr = [];
 				comment.forEach(function(item, index){
 					if(item.id == id){
-						console.log("呵呵呵呵");
 					}else{
 						tmpArr.push(item);
 					}

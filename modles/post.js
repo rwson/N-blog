@@ -472,7 +472,6 @@ Post.search = function (keyword, callback) {
         },
         function(collection,cb){
             var pattern = new RegExp("^.*" + keyword + ".*$", "i");
-            console.log(pattern);
             collection.find({
                 'title': pattern
             }, {
@@ -482,7 +481,6 @@ Post.search = function (keyword, callback) {
             }).sort({
                 'time': -1
             }).toArray(function (err, docs) {
-                console.log(docs);
                 cb(err,docs);
             });
         }

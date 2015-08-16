@@ -430,9 +430,6 @@ module.exports = function (app) {
 
     app.get('/delete-comment/:name/:day/:title/:id',function(req,res){
         Comment.delete(req.params.name,req.params.day,req.params.title,req.params.id,function(err){
-            console.log('------------------');
-            console.log(err);
-            console.log('------------------');
             if(err){
                 req.flash('error','删除失败!');
                 return res.redirect('back');    
