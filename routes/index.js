@@ -146,12 +146,11 @@ module.exports = function (app) {
         var reqUser = req.user;
         req.session.user = {
             'name':req.user['_json'].name,
-            'head':req.user['_json'].head,
+            'head':req.user['_json']['avatar_url'],
             'email':req.user['_json'].email,
             'url':req.user['_json'].blog
         };
-        console.log(req.session.user);
-        req.flash('success','GitHub登录成功!')
+        req.flash('success','GitHub登录成功!');
         res.redirect('/');
       });
     //  处理GitHub登录授权成功后的跳转
