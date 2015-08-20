@@ -145,10 +145,10 @@ module.exports = function (app) {
       function(req, res) {
         var reqUser = req.user;
         req.session.user = {
-            'name':req.user.name,
-            'head':req.user.head,
-            'email':req.user.email,
-            'url':req.user.blog
+            'name':req.user['_json'].name,
+            'head':req.user['_json'].head,
+            'email':req.user['_json'].email,
+            'url':req.user['_json'].blog
         };
         console.log(req.session.user);
         req.flash('success','GitHub登录成功!')
