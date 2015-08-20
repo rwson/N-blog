@@ -15,7 +15,7 @@ module.exports = function (app) {
 
         Post.getTen(null, page, function (err, posts, total) {
             //  从数据库中获取当前页对应的10条数据
-            
+
             if (err) {
                 posts = [];
             }
@@ -118,41 +118,41 @@ module.exports = function (app) {
                 return res.redirect('/login');
             }
             //	用户不存在的情况
-            
+
             if (user.password != password) {
                 req.flash('error', '密码错误！');
                 return res.redirect('/login');
             }
             //	密码错误
-            
+
             req.session.user = user;
             req.flash('success', '登陆成功');
             res.redirect('/');
         });
     });
     //	登录
-    
+
     app.get('/auth/github',
-      passport.authenticate('github'),
-      function(req, res){
-      });
+        passport.authenticate('github'),
+        function (req, res) {
+        });
     //  处理用GitHub登录的路由
 
-    app.get('/auth/github/callback', 
-      passport.authenticate('github', { 
-        failureRedirect: '/login'
-    }),
-      function(req, res) {
-        var reqUser = req.user;
-        req.session.user = {
-            'name':req.user['_json'].name,
-            'head':req.user['_json']['avatar_url'],
-            'email':req.user['_json'].email,
-            'url':req.user['_json'].blog
-        };
-        req.flash('success','GitHub登录成功!');
-        res.redirect('/');
-      });
+    app.get('/auth/github/callback',
+        passport.authenticate('github', {
+            failureRedirect: '/login'
+        }),
+        function (req, res) {
+            var reqUser = req.user._json;
+            req.session.user = {
+                'name': reqUser.name,
+                'head': reqUser.avatar_url,
+                'email': reqUser.email,
+                'url': reqUser.blog
+            };
+            req.flash('success', 'GitHub登录成功!');
+            res.redirect('/');
+        });
     //  处理GitHub登录授权成功后的跳转
 
     app.get('/post', _checkLogin);
@@ -170,9 +170,9 @@ module.exports = function (app) {
     app.post('/post', _checkLogin);
     app.post('/post', function (req, res) {
         var currentUser = req.session.user,
-            tags = [req.body.tag1,req.body.tag2,req.body.tag3],
+            tags = [req.body.tag1, req.body.tag2, req.body.tag3],
         //  标签    
-            post = new Post(currentUser.name, currentUser.head,req.body.title, tags,req.body.content);
+            post = new Post(currentUser.name, currentUser.head, req.body.title, tags, req.body.content);
         //  实例化post对象
 
         post.save(function (err) {
@@ -222,100 +222,100 @@ module.exports = function (app) {
     });
     //	上传文件
 
-    app.get('/archive',function(req,res){
-        Post.getArchive(function(err,posts){
+    app.get('/archive', function (req, res) {
+        Post.getArchive(function (err, posts) {
             //  从数据库中获取记录
 
-            if(err){
-                req.flash('error',err);
+            if (err) {
+                req.flash('error', err);
                 return res.redirect('/');
             }
             //  查询失败
 
-            res.render('acrhive',{
-                'title':'存档',
-                'posts':posts,
-                'user':req.session.user,
-                'success':req.flash('success'),
-                'error':req.flash('error')
+            res.render('acrhive', {
+                'title': '存档',
+                'posts': posts,
+                'user': req.session.user,
+                'success': req.flash('success'),
+                'error': req.flash('error')
             });
         });
     });
     //  存档
 
-    app.get('/tags',function(req,res){
-        Post.getTags(function(err,posts){
+    app.get('/tags', function (req, res) {
+        Post.getTags(function (err, posts) {
             //  从数据库获取对应标签的文章
 
-            if(err){
-                req.flash('error',err);
+            if (err) {
+                req.flash('error', err);
                 return res.redirect('/');
             }
             //  读取失败
 
-            res.render('tags',{
-                'title':'分类标签',
-                'posts':posts,
-                'user':req.session.user,
-                'success':req.flash('success').toString(),
-                'error':req.flash('error').toString()
+            res.render('tags', {
+                'title': '分类标签',
+                'posts': posts,
+                'user': req.session.user,
+                'success': req.flash('success').toString(),
+                'error': req.flash('error').toString()
             });
 
         });
     });
     //  所有标签
 
-    app.get('/tags/:tag',function(req,res){
-        Post.getTag(req.params.tag,function(err,posts){
+    app.get('/tags/:tag', function (req, res) {
+        Post.getTag(req.params.tag, function (err, posts) {
             //  从数据库获取该标签对应的标签
 
-            if(err){
-                req.flash('error',err);
+            if (err) {
+                req.flash('error', err);
                 return res.redirect('/');
             }
             //  查询失败
 
-            res.render('tag',{
-                'title':req.params.tag,
-                'posts':posts,
-                'user':req.session.user,
-                'success':req.flash('success').toString(),
-                'error':req.flash('error').toString()
+            res.render('tag', {
+                'title': req.params.tag,
+                'posts': posts,
+                'user': req.session.user,
+                'success': req.flash('success').toString(),
+                'error': req.flash('error').toString()
             });
 
         });
     });
     //  指定标签
 
-    app.get('/search',function(req,res){
-        Post.search(req.query.keyword,function(err,posts){
+    app.get('/search', function (req, res) {
+        Post.search(req.query.keyword, function (err, posts) {
             //  从数据库中取得记录
 
-            if(err){
-                req.flash('error',err);
+            if (err) {
+                req.flash('error', err);
                 return res.redirect('/');
             }
             //  搜索失败
 
-            res.render('search',{
-                'title':req.query.keyword + "的搜索结果",
-                'user':req.session.user,
-                'posts':posts,
-                'keyword':req.query.keyword,
-                'success':req.flash('success').toString(),
-                'error':req.flash('error').toString()
+            res.render('search', {
+                'title': req.query.keyword + "的搜索结果",
+                'user': req.session.user,
+                'posts': posts,
+                'keyword': req.query.keyword,
+                'success': req.flash('success').toString(),
+                'error': req.flash('error').toString()
             });
 
         });
     });
     //  搜索
 
-    app.get('/links',function(req,res){
-        res.render('links',{
-            'title':'友情链接',
-            'user':req.session.user,
-            'success':req.flash('success').toString(),
-            'error':req.flash('error').toString()
+    app.get('/links', function (req, res) {
+        res.render('links', {
+            'title': '友情链接',
+            'user': req.session.user,
+            'success': req.flash('success').toString(),
+            'error': req.flash('error').toString()
         });
     });
     //  友情链接
@@ -360,13 +360,13 @@ module.exports = function (app) {
     });
     //	用户详情
 
-    app.get('/usercenter/:name',function(req,res){
-        if(avatarArr.length == 0){
-            avatarArr = _rendFileList(fs,avatarDir);
+    app.get('/usercenter/:name', function (req, res) {
+        if (avatarArr.length == 0) {
+            avatarArr = _rendFileList(fs, avatarDir);
         }
         //  如果文件数组为空,就先读取待选头像下的文件列表
 
-        res.render('usercenter',{
+        res.render('usercenter', {
             'title': '个人中心',
             'avators': avatarArr,
             'user': req.session.user,
@@ -407,9 +407,9 @@ module.exports = function (app) {
             emailMd5 = md5.update(req.body.email.toLowerCase()).digest('hex'),
             head = 'http://zh-tw.gravatar.com/avatar' + emailMd5 + '?s=48',
             comment = {
-                'id':emailMd5 + ('' + Math.random()).replace(/\./,''),
+                'id': emailMd5 + ('' + Math.random()).replace(/\./, ''),
                 'name': req.body.name,
-                'head':head,
+                'head': head,
                 'email': req.body.email,
                 'website': req.body.website,
                 'time': time,
@@ -435,13 +435,13 @@ module.exports = function (app) {
     });
     //  评论请求
 
-    app.get('/delete-comment/:name/:day/:title/:id',function(req,res){
-        Comment.delete(req.params.name,req.params.day,req.params.title,req.params.id,function(err){
-            if(err){
-                req.flash('error','删除失败!');
-                return res.redirect('back');    
+    app.get('/delete-comment/:name/:day/:title/:id', function (req, res) {
+        Comment.delete(req.params.name, req.params.day, req.params.title, req.params.id, function (err) {
+            if (err) {
+                req.flash('error', '删除失败!');
+                return res.redirect('back');
             }
-            req.flash('success','删除成功!');
+            req.flash('success', '删除成功!');
             res.redirect('back');
         });
     });
@@ -525,26 +525,26 @@ module.exports = function (app) {
     });
     //	删除指定的文章
 
-    app.get('/reprint/:name/:day/:title',_checkLogin);
-    app.get('/reprint/:name/:day/:title',function(req,res){
-        Post.edit(req.params.name,req.params.day,req.params.title,function(err,post){
+    app.get('/reprint/:name/:day/:title', _checkLogin);
+    app.get('/reprint/:name/:day/:title', function (req, res) {
+        Post.edit(req.params.name, req.params.day, req.params.title, function (err, post) {
             //  调用edit返回markdown格式的文本,而不是getOne返回的HTML字符串
 
-            if(err){
-                req.flash('error',err);
+            if (err) {
+                req.flash('error', err);
                 return res.redirect('back');
             }
             //  查询失败
 
             var curUser = req.session.user,
                 reprint_from = {
-                    'name':post.name,
-                    'day':post.time.day,
-                    'title':post.title
+                    'name': post.name,
+                    'day': post.time.day,
+                    'title': post.title
                 },
                 reprint_to = {
-                    'name':curUser.name,
-                    'head':curUser.head
+                    'name': curUser.name,
+                    'head': curUser.head
                 },
             //  转载信息
 
@@ -562,18 +562,18 @@ module.exports = function (app) {
                     }
                 ],
                 url = '/u/' + _encodeUrl(opt);
-                //  组装url,调用_encodeUrl解决中文无法解析问题
+            //  组装url,调用_encodeUrl解决中文无法解析问题
 
-            Post.reprint(reprint_from,reprint_to,function(err,post){
+            Post.reprint(reprint_from, reprint_to, function (err, post) {
                 //  调用转载方法
-                
-                if(err){
-                    req.flash('error',err);
+
+                if (err) {
+                    req.flash('error', err);
                     return res.redirect('back');
                 }
                 //  转载失败,返回之前的页面
 
-                req.flash('success','转载成功!');
+                req.flash('success', '转载成功!');
                 res.redirect(url);
 
             });
@@ -590,7 +590,7 @@ module.exports = function (app) {
     });
     //	登出
 
-    app.use(function(req,res){
+    app.use(function (req, res) {
         res.render('404');
     });
     //  404页
@@ -603,17 +603,17 @@ module.exports = function (app) {
  * @param  {[type]} dir [description]
  * @return {[type]}     [description]
  */
-function _rendFileList(fs,dir){
+function _rendFileList(fs, dir) {
     var arr = [];
     //  定义空数组用于返回
-    
-        fs.readdir(dir, function(err, files){
-        if(err){
+
+    fs.readdir(dir, function (err, files) {
+        if (err) {
             return;
         }
         //err 为错误,files文件名列表包含文件夹与文件
 
-        files.forEach(function(file){
+        files.forEach(function (file) {
             arr.push(dir + file);
         });
     });
@@ -666,6 +666,8 @@ function _encodeUrl(data) {
 }
 
 function ensureAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) { return next(); }
-  res.redirect('/login')
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.redirect('/login')
 }
