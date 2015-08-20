@@ -131,23 +131,31 @@ module.exports = function (app) {
         });
     });
     //	登录
-
-    app.get('/login/github',passport.authenticate('github',{'session':false}));
+    
+    app.get('/auth/github',
+      passport.authenticate('github'),
+      function(req, res){
+      });
     //  处理用GitHub登录的路由
 
-    app.get('/login/github/callback',passport.authenticate('github',{
-        'session':false,
-        'failureRedirect':'/login',
-        'successFlash':'登录成功!'
-    }),function(req,res){
+    app.get('/auth/github/callback', 
+      passport.authenticate('github', { 
+        failureRedirect: '/login'
+    }),
+      function(req, res) {
+        var reqUser = req.user;
         req.session.user = {
-            'name':req.user.username,
-            'head':'http://gravatar.com/' + req.user._join.gravatar_id + '?s=48'
+            'name':req.user.name,
+            'head':req.user.head,
+            'email':req.user.email,
+            'url':req.user.blog
         };
+        console.log(req.session.user);
+        req.flash('success','GitHub登录成功!')
         res.redirect('/');
-    });
+      });
     //  处理GitHub登录授权成功后的跳转
-    
+
     app.get('/post', _checkLogin);
     app.get('/post', function (req, res) {
 
@@ -656,4 +664,9 @@ function _encodeUrl(data) {
         //	如果encode参数为true,就是需要编码,否则就不需要编码
     });
     return arr.join("/");
+}
+
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) { return next(); }
+  res.redirect('/login')
 }
