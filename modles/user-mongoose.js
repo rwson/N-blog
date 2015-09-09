@@ -10,10 +10,10 @@ var mongodb = require('./db'),
 mongoose.connect('mongodb://localhost:27017/blog');
 
 var userSchema = new mongoose.Schema({
-        'name':'String',
-        'password':'String',
-        'email':'String',
-        'head':'String'
+        'name':String,
+        'password':String,
+        'email':String,
+        'head':String
     },{
         'collection':'users'
     }),
